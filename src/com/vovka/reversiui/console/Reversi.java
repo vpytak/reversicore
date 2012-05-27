@@ -1,9 +1,14 @@
 package com.vovka.reversiui.console;
 
 import java.util.Scanner;
+import java.util.WeakHashMap;
 
+import com.vovka.reversicore.IllegalMoveException;
+import com.vovka.reversicore.communication.CellStatus;
 import com.vovka.reversicore.communication.GameController;
 import com.vovka.reversicore.communication.GameStatus;
+import com.vovka.reversicore.decisionmaking.PlayerIntellect;
+import com.vovka.reversicore.entity.CellPosition;
 
 public class Reversi {
 	private Scanner in;
@@ -20,14 +25,34 @@ public class Reversi {
 
 	private void startGame() {
 		startMessage();
+		PlayerIntellect intellect = new PlayerIntellect(CellStatus.WHITE);
 		GameController gameController = new GameController();
 		GameStatus status = gameController.newGame();
 		
 		while (true) {
 			displayStatus(status);
-			int i =in.nextInt();
-			int j = in.nextInt();
-			status = gameController.move(i, j);
+			CellPosition move = null;
+			
+			if (status.user()  == CellStatus.WHITE) {
+				try {
+					move = intellect.move(status.grid());
+				} catch (IllegalMoveException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else {
+				String s = "";
+				while (s.length() < 1)
+					s = in.nextLine().trim();
+				
+				int k = s.charAt(0) - 'a';
+				int l = s.substring(1).trim().charAt(0) - '1';
+				move = new CellPosition(l, k);
+			}
+			
+//			int o = in.nextInt();
+			
+			status = gameController.move(move.i, move.j);
 		}
 	}
 

@@ -24,6 +24,15 @@ public class Grid {
 		this.cells = cells;
 	}
 	public Grid clone() {
-		return new Grid(cells.clone());
+		int rows=cells.length ;
+	    
+	    //clone the 'shallow' structure of array
+	    CellStatus[][] newArray =(CellStatus[][]) cells.clone();
+	    //clone the 'deep' structure of array
+	    for(int row=0;row<rows;row++){
+	        newArray[row]=(CellStatus[]) cells[row].clone();
+	    }
+
+	    return new Grid(newArray);
 	}
 }

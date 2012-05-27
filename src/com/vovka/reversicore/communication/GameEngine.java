@@ -6,7 +6,8 @@ import com.vovka.reversicore.entity.Grid;
 
 public class GameEngine {
 
-	public static Grid makeMove(Grid grid, int i, int j, CellStatus type) throws IllegalMoveException {
+	public static Grid makeMove(Grid gridSource, int i, int j, CellStatus type) throws IllegalMoveException {
+		Grid grid = gridSource.clone();
 		if (i < 0 || i > 7 || j < 0 || j > 7)
 			throw new OutOfBoundException("Move out of bounds. (" + i + "," + j + ")");
 		
