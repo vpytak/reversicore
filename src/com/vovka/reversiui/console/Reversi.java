@@ -35,9 +35,11 @@ public class Reversi {
 			
 			if (status.user()  == CellStatus.WHITE) {
 				try {
-					move = intellect.move(status.grid());
+					System.out.println("Ask AI to move");
+					move = intellect.moveSmart(status.grid());
+					System.out.println("AI replied: ("+move.i+","+move.j+")");
 				} catch (IllegalMoveException e) {
-					// TODO Auto-generated catch block
+					System.out.println("PISKA");
 					e.printStackTrace();
 				}
 			} else {
