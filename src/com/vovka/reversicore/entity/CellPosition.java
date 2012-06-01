@@ -8,4 +8,7 @@ public class CellPosition {
 		this.i = i;
 		this.j = j;
 	}
+	public boolean valid() {
+		return (i >= 0 && j >= 0);
+	}
 }

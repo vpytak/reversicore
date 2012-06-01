@@ -1,9 +1,9 @@
 package com.vovka.reversiui.console;
 
 import java.util.Scanner;
-import java.util.WeakHashMap;
 
 import com.vovka.reversicore.IllegalMoveException;
+import com.vovka.reversicore.NoLegalMovesException;
 import com.vovka.reversicore.communication.CellStatus;
 import com.vovka.reversicore.communication.GameController;
 import com.vovka.reversicore.communication.GameStatus;
@@ -36,10 +36,13 @@ public class Reversi {
 			if (status.user()  == CellStatus.WHITE) {
 				try {
 					System.out.println("Ask AI to move");
-					move = intellect.moveSmart(status.grid());
-					System.out.println("AI replied: ("+move.i+","+move.j+")");
+					move = intellect.move(status.grid());
+					System.out.println("AI replied: ("+(char)(move.j + 'a')+","+(char)(move.i + '1')+")");
 				} catch (IllegalMoveException e) {
-					System.out.println("PISKA");
+					System.out.println("Something helly happened. AI skips turn.");
+//					e.printStackTrace();
+				} catch (NoLegalMovesException e) {
+					System.out.println("AI skips turn because of no legal moves.");
 					e.printStackTrace();
 				}
 			} else {
@@ -52,9 +55,11 @@ public class Reversi {
 				move = new CellPosition(l, k);
 			}
 			
-//			int o = in.nextInt();
-			
-			status = gameController.move(move.i, move.j);
+			try {
+				status = gameController.move(move.i, move.j);
+			} catch (IllegalMoveException e) {
+				System.out.println("This move is not possible. Try another one");
+			}
 		}
 	}
 

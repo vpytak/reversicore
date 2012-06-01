@@ -6,109 +6,88 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import com.vovka.reversicore.IllegalMoveException;
+import com.vovka.reversicore.NoLegalMovesException;
 import com.vovka.reversicore.communication.CellStatus;
 import com.vovka.reversicore.communication.GameEngine;
 import com.vovka.reversicore.entity.CellPosition;
 import com.vovka.reversicore.entity.Grid;
 
 /*
- * This should realize minimax algorythm basing on evalutaion in GridEvaluator.
- * Currently it does comparing of evalutaions level1 not diving deeper
+ * This should realize minimax algorithm basing on evaluation in GridEvaluator.
  */
 public class PlayerIntellect {
-	private CellStatus type;
+	
+	/**
+	 * Type of AI
+	 */
 	private CellStatus mainType;
+	
+	/**
+	 * level of investigation
+	 */
 	private final int levelDeep = 3;
+	
 	private Logger logger;
+	
 	public PlayerIntellect(CellStatus type) {
-		this.type = type;
 		this.mainType = type;
 	}
 	
-	public CellPosition moveSmart(Grid grid, int level) throws IllegalMoveException {
-		return moveSmart(grid, level, type);
+	public CellPosition move(Grid grid) throws IllegalMoveException, NoLegalMovesException {
+		getLogger().info("Entry into AI");
+		return move(grid, 1);
 	}
 	
-	public CellPosition moveSmart(Grid grid, int level, CellStatus type) throws IllegalMoveException {
-		getLogger().info("moveSmart at level " + level);
-		CellPosition res = new CellPosition(0, 0);
+	public CellPosition move(Grid grid, int level) throws IllegalMoveException, NoLegalMovesException {
+		return move(grid, level, mainType);
+	}
+	
+	public CellPosition move(Grid grid, int level, CellStatus type) throws IllegalMoveException, NoLegalMovesException {
+		getLogger().info("move at level " + level);
+		CellPosition res = new CellPosition(-1, -1);
 		int compModifier = 1;
 		if (level % 2 == 0) {
 			compModifier = -1;
 		}
-	
-		if (level == levelDeep) {
-			return move(grid, compModifier);
-		} else 
-			getLogger().info("Current level: " + level);
+
 		GridEvaluator gridEvaluator = new GridEvaluator();
 		
-		//for all available moves call movesmart with resulting grid and level +1 
+		//for all available moves call move with resulting grid and level +1 
 		//then select max (compModifier into notice)
 		Double bestResult = null;
 		for (int i = 0; i< 7; i++) {
 			for (int j = 0; j < 7; j++) {
 				try {
-					Grid moved = GameEngine.makeMove(grid.clone(), i, j, type);
-					getLogger().info("Calling movesmart for level " + (level+1)+" with ("+i+","+j+")");
-					CellPosition moveSmart = moveSmart(moved, level + 1, antiType(type));
-					getLogger().info("Movesmart for level " + (level+1)+" with ("+i+","+j+") returned i-" + moveSmart.i + ", j-" + moveSmart.j);
-					Grid makeMove = GameEngine.makeMove(moved, moveSmart.i, moveSmart.j, antiType(type));
-					double moveResultValue = gridEvaluator.eval(makeMove, mainType);
+					Grid initialMove = GameEngine.makeMove(grid.clone(), i, j, type);
+					double moveResultValue = 0;
+					if (level == levelDeep) {
+						moveResultValue = gridEvaluator.eval(initialMove, mainType);
+					} else {
+						getLogger().info("Calling move for level " + (level+1)+" with ("+i+","+j+")");
+						CellPosition move = move(initialMove, level + 1, antiType(type));
+						getLogger().info("Move for level " + (level+1)+" with ("+i+","+j+") returned i-" + move.i + ", j-" + move.j);
+						Grid conditionalMove = GameEngine.makeMove(initialMove, move.i, move.j, antiType(type));
+						moveResultValue = gridEvaluator.eval(conditionalMove, mainType);
+					}
 					
 					if (bestResult == null || compModifier * moveResultValue > compModifier * bestResult) {
 						bestResult = moveResultValue;
 						res = new CellPosition(i, j);
 					} 
 				} catch (IllegalMoveException e) {
+					//Do nothing - we use this as choosing move list.
+				} catch (NoLegalMovesException e) {
 					//Do nothing
 				}
 			}
 		}
+		if (!res.valid()) 
+			throw new NoLegalMovesException("No legal moves");
+		
 		getLogger().info("Retruning: i-" + res.i + ", j-" + res.j);
 		return res;
 	}
 	
-	public CellPosition moveSmart(Grid grid) throws IllegalMoveException {
-		getLogger().info("Entry into AI");
-		return moveSmart(grid, 1);
-	}
-	
-	public CellPosition move(Grid grid) throws IllegalMoveException {
-		return move(grid, 1);
-	}
-	
-	public CellPosition move(Grid grid, int compModifier) throws IllegalMoveException {
-		return move(grid, compModifier, type);
-	}
-	
-	public CellPosition move(Grid grid, int compModifier, CellStatus type) throws IllegalMoveException {
-		CellPosition res = new CellPosition(0, 0);
-		GridEvaluator gridEvaluator = new GridEvaluator();
-		Double bestResult = null;
-		//Get list of available moves
-		for (int i = 0; i< 7; i++) {
-			for (int j = 0; j < 7; j++) {
-				try {
-					Grid moveResult = GameEngine.makeMove(grid.clone(), i, j, type);
-					double moveResultValue = gridEvaluator.eval(moveResult, mainType);
-					if (bestResult == null || compModifier * moveResultValue > compModifier * bestResult) {
-						bestResult = moveResultValue;
-						res = new CellPosition(i, j);
-					}
-				} catch (IllegalMoveException e) {
-					//Do nothing
-				}
-			}
-		}
-		if (bestResult == null) {
-			getLogger().info("Shit happened");
-			DebugHelper.printGrid(grid);
-			throw new IllegalMoveException("No legal moves");
-		}
-		
-		return res;
-	}
 	
 	private CellStatus antiType(CellStatus type) {
 		if (type == CellStatus.WHITE)

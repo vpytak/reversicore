@@ -13,7 +13,7 @@ public class GameController {
 	private List<User> users;
 	private User user1 = new User("User 1", CellStatus.WHITE);
 	private User user2 = new User("User 2", CellStatus.BLACK);
-	
+	private boolean gameFinished = false;
 	public GameController() {
 		
 	}
@@ -35,16 +35,29 @@ public class GameController {
 		return status();
 	}
 	
-	public GameStatus move(int i, int j) {
-		try {
-			grid = GameEngine.makeMove(getGrid(), i, j, getUser().type);
-			users.add(users.get(0));
-			users.remove(0);
-		} catch (IllegalMoveException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public GameStatus move(int i, int j) throws IllegalMoveException {
+		grid = GameEngine.makeMove(getGrid(), i, j, getUser().type);
+		gameFinished = gameFinished(grid);
+		users.add(users.get(0));
+		users.remove(0);
 		return status();
+	}
+	
+	private boolean gameFinished(Grid grid) {
+		for (int i =0 ; i< 8; i++)
+			for (int j = 0; j< 8; i++) 
+				if (grid.cells[i][j] == CellStatus.EMPTY) {
+					try {
+						GameEngine.makeMove(grid, i, j, CellStatus.WHITE);
+						GameEngine.makeMove(grid, i, j, CellStatus.BLACK);
+					} catch (IllegalMoveException e) {
+						//Do nothing
+					}
+					return false;
+				}
+		
+		
+		return true;
 	}
 	
 	public User getUser() {
@@ -56,6 +69,6 @@ public class GameController {
 	}
 	
 	public GameStatus status() {
-		return new GameStatus(getGrid(), getUser().type);
+		return new GameStatus(getGrid(), getUser().type, gameFinished);
 	}
 }
